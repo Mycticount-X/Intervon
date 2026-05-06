@@ -1,17 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Menu, MessageCircle, ArrowRight } from "lucide-react";
 import { ChatMessage } from "./components/ChatMessage";
 import { VoiceInputPanel } from "./components/VoiceInputPanel";
 import { FeedbackCard } from "./components/FeedbackCard";
-import  {Sidebar}  from "./components/Sidebar";
-import { motion } from "motion/react"
+import { Sidebar } from "./components/Sidebar";
+import { motion } from "motion/react";
 
 type UIState = "question" | "recording" | "processing" | "feedback";
+
+// --- Bank Soal Simulasi ---
+const INTERVIEW_QUESTIONS = [
+  "Can you tell me about a time you faced a conflict in a team project?",
+  "Describe a time when you had to learn a new programming language or framework quickly.",
+  "Tell me about a situation where you had to meet a very tight deadline. How did you manage it?",
+  "Can you share an experience where you made a critical mistake? How did you handle it?"
+];
 
 export default function App() {
   const [currentState, setCurrentState] = useState<UIState>("question");
   const [isRecording, setIsRecording] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Default terbuka di desktop
+  
+  // State untuk menyimpan pertanyaan mana yang sedang aktif
+  const [questionIndex, setQuestionIndex] = useState(0);
+
+  // Pastikan sidebar tertutup otomatis jika dibuka dari HP
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Cek ukuran layar saat pertama kali render
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleStartRecording = () => {
     setIsRecording(true);
@@ -29,6 +50,8 @@ export default function App() {
   };
 
   const handleNextQuestion = () => {
+    // Lanjut ke pertanyaan berikutnya secara berurutan
+    setQuestionIndex((prev) => (prev + 1) % INTERVIEW_QUESTIONS.length);
     setCurrentState("question");
   };
 
@@ -41,8 +64,21 @@ export default function App() {
   };
 
   const handleNewSession = () => {
+    // 1. Acak pertanyaan baru yang berbeda dari yang sekarang
+    let nextIndex;
+    do {
+      nextIndex = Math.floor(Math.random() * INTERVIEW_QUESTIONS.length);
+    } while (nextIndex === questionIndex);
+    
+    // 2. Terapkan state
+    setQuestionIndex(nextIndex);
     setCurrentState("question");
     setIsRecording(false);
+    
+    // 3. Jika di layar HP/Tablet (lebar < 1024px), tutup sidebar otomatis agar user bisa langsung lihat
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
   };
 
   return (
@@ -61,12 +97,12 @@ export default function App() {
           <div className="w-full px-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSidebarOpen(true)}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-500"
               >
                 <Menu className="size-5" />
               </button>
-              <h1 className="text-2xl font-bold text-blue-600 tracking-tight">
+              <h1 className="text-2xl font-bold text-blue-600 tracking-tight hidden sm:block">
                 Intervon
               </h1>
             </div>
@@ -89,10 +125,10 @@ export default function App() {
         <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
           <div className="max-w-4xl mx-auto flex flex-col gap-6">
             
-            {/* State 1: Model asks question */}
+            {/* State 1: Model asks question (Dinamis dari Bank Soal) */}
             <ChatMessage
               role="ai"
-              content="Can you tell me about a time you faced a conflict in a team project?"
+              content={INTERVIEW_QUESTIONS[questionIndex]}
             />
 
             {/* State 3 & 4: Transcribing / Final Answer */}
@@ -103,7 +139,7 @@ export default function App() {
                 content={
                   currentState === "processing"
                     ? "Transcribing audio..."
-                    : "Well, during my final year capstone project, we had a disagreement about the tech stack. I advocated for using React because most of our team was familiar with it, while one team member insisted on Vue.js. I organized a meeting where we discussed the pros and cons, and we eventually decided to go with React based on team expertise and project timeline."
+                    : "Well, for this specific situation, I focused on clearly communicating with my team, breaking down the problem into smaller tasks, and ensuring everyone was aligned. I organized a quick sync-up meeting to gather input, and we managed to resolve the issue smoothly."
                 }
               />
             )}
@@ -120,8 +156,8 @@ export default function App() {
                 content={
                   <div className="flex flex-col">
                     <FeedbackCard
-                      score="excellent"
-                      feedback="Great use of the STAR method! You clearly described the **Situation** (team conflict about tech stack), your **Task** (resolving it), the **Action** (organizing a discussion), and the **Result** (team consensus). To make this even stronger, consider adding specific metrics about the project outcome or how the decision improved team productivity."
+                      score="good"
+                      feedback="Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
                     />
                     
                     {/* State 5: Inline Next Actions */}
