@@ -63,6 +63,28 @@ export default function App() {
     alert("Text input feature - fallback for when mic is unavailable");
   };
 
+  const handleAudioRecorded = async (audioBlob: Blob) => {
+    try {
+      // Upload to backend
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.webm");
+
+      const response = await fetch("http://localhost:8000/api/audio/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Audio uploaded:", data);
+      } else {
+        console.error("Upload failed:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error uploading audio:", error);
+    }
+  };
+
   const handleNewSession = () => {
     // 1. Acak pertanyaan baru yang berbeda dari yang sekarang
     let nextIndex;
@@ -196,6 +218,7 @@ export default function App() {
             onStartRecording={handleStartRecording}
             onStopRecording={handleStopRecording}
             onTextInput={handleTextInput}
+            onAudioRecorded={handleAudioRecorded}
           />
         </div>
       </div>
