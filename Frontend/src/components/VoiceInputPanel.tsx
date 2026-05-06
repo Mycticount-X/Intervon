@@ -23,19 +23,63 @@ export function VoiceInputPanel({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const [waveformData, setWaveformData] = useState<Uint8Array | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   // Initialize audio capture when recording starts
   useEffect(() => {
-    if (isRecording && !mediaRecorderRef.current) {
-      initializeAudioCapture();
+    if (!isRecording) {
+      return; // Don't do anything if not recording
     }
+
+    if (mediaRecorderRef.current) {
+      return; // Already recording
+    }
+
+    // Clear the previous recording URL and data when starting a new one
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+      setRecordedAudioUrl(null);
+    }
+    setWaveformData(null);
+    
+    initializeAudioCapture();
   }, [isRecording]);
+
+  // Cleanup: revoke object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (recordedAudioUrl) {
+        URL.revokeObjectURL(recordedAudioUrl);
+      }
+      // Full cleanup on unmount
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, [recordedAudioUrl]);
 
   const initializeAudioCapture = async () => {
     try {
+      // Aggressive cleanup of any existing resources
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close();
+      }
+      audioContextRef.current = null;
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current = null;
+      }
+      setWaveformData(null);
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
       // Set up MediaRecorder
@@ -44,12 +88,25 @@ export function VoiceInputPanel({
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
+        if (audioChunksRef.current.length === 0) {
+          console.warn("No audio data recorded");
+          return;
+        }
+
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(audioBlob);
+        
+        // Clean up old URL if it exists
+        if (recordedAudioUrl) {
+          URL.revokeObjectURL(recordedAudioUrl);
+        }
+        
         setRecordedAudioUrl(url);
         
         // Callback to parent component
@@ -58,7 +115,26 @@ export function VoiceInputPanel({
         }
 
         // Stop all audio tracks
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
+        
+        // Clean up everything
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+          audioContextRef.current.close();
+        }
+        audioContextRef.current = null;
+        mediaRecorderRef.current = null;
+        setWaveformData(null);
+      };
+
+      mediaRecorder.onerror = (event) => {
+        console.error("MediaRecorder error:", event.error);
+        alert(`Recording error: ${event.error}`);
       };
 
       mediaRecorder.start();
@@ -68,20 +144,31 @@ export function VoiceInputPanel({
       audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
+      analyser.fftSize = 2048; // Increased for better sensitivity
+      analyser.smoothingTimeConstant = 0.8;
       source.connect(analyser);
 
       analyserRef.current = analyser;
 
       // Animation loop for visualization
+      let isActive = true;
       const visualize = () => {
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(dataArray);
-        setWaveformData(dataArray);
-        requestAnimationFrame(visualize);
+        if (!isActive) return;
+        
+        if (analyserRef.current) {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          setWaveformData(new Uint8Array(dataArray)); // Create a copy
+        }
+        animationFrameRef.current = requestAnimationFrame(visualize);
       };
 
       visualize();
+
+      // Cleanup function to stop visualization
+      return () => {
+        isActive = false;
+      };
     } catch (error) {
       console.error("Error accessing microphone:", error);
       alert("Unable to access microphone. Please check permissions.");

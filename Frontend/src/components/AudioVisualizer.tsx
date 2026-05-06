@@ -7,12 +7,15 @@ interface AudioVisualizerProps {
 export function AudioVisualizer({ waveformData }: AudioVisualizerProps) {
   // If we have real waveform data, show it; otherwise show animated fallback
   if (waveformData) {
-    // Display 20 bars from the frequency data
-    const barCount = 20;
+    // Display more bars for better detail
+    const barCount = 32;
     const barWidth = Math.floor(waveformData.length / barCount);
     const bars = Array.from({ length: barCount }).map((_, i) => {
       const index = i * barWidth;
-      return (waveformData[index] || 0) / 255;
+      // Normalize and amplify the frequency data for better sensitivity
+      const normalized = (waveformData[index] || 0) / 255;
+      // Use a power function to amplify smaller values for better sensitivity
+      return Math.pow(normalized, 0.8);
     });
 
     return (
@@ -20,9 +23,9 @@ export function AudioVisualizer({ waveformData }: AudioVisualizerProps) {
         {bars.map((height, i) => (
           <div
             key={i}
-            className="w-1.5 bg-blue-500 rounded-full transition-all"
+            className="w-1.5 bg-blue-500 rounded-full transition-all duration-75"
             style={{
-              height: `${Math.max(12, height * 48)}px`,
+              height: `${Math.max(8, height * 64)}px`,
             }}
           />
         ))}
