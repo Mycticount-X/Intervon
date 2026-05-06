@@ -1,88 +1,168 @@
-import React, { useState } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { ChatArea } from './components/ChatArea';
-import type { ChatSession, Message } from './types';
+import { useState } from "react";
+import { ChevronDown, Menu, MessageCircle, ArrowRight } from "lucide-react";
+import { ChatMessage } from "./components/ChatMessage";
+import { VoiceInputPanel } from "./components/VoiceInputPanel";
+import { FeedbackCard } from "./components/FeedbackCard";
+import  {Sidebar}  from "./components/Sidebar";
+import { motion } from "motion/react"
 
-const App: React.FC = () => {
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+type UIState = "question" | "recording" | "processing" | "feedback";
 
-  const handleNewChat = () => {
-    const newSession: ChatSession = {
-      id: Date.now().toString(),
-      title: `Interview ${sessions.length + 1}`,
-      messages: [],
-    };
-    setSessions([newSession, ...sessions]);
-    setActiveSessionId(newSession.id);
+export default function App() {
+  const [currentState, setCurrentState] = useState<UIState>("question");
+  const [isRecording, setIsRecording] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setCurrentState("recording");
   };
 
-  const handleSendMessage = (text: string) => {
-    if (!activeSessionId) return;
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    setCurrentState("processing");
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    setSessions(prevSessions => 
-      prevSessions.map(session => {
-        if (session.id === activeSessionId) {
-          return { ...session, messages: [...session.messages, userMessage] };
-        }
-        return session;
-      })
-    );
-
-    // "Test" Simulation
+    // Simulasi proses RAG & LLM (Whisper -> Llama 3)
     setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Test',
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-
-      setSessions(prevSessions => 
-        prevSessions.map(session => {
-          if (session.id === activeSessionId) {
-            return { ...session, messages: [...session.messages, botMessage] };
-          }
-          return session;
-        })
-      );
-    }, 500);
+      setCurrentState("feedback");
+    }, 2500);
   };
 
-  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const handleNextQuestion = () => {
+    setCurrentState("question");
+  };
+
+  const handleClarify = () => {
+    setCurrentState("question");
+  };
+
+  const handleTextInput = () => {
+    alert("Text input feature - fallback for when mic is unavailable");
+  };
+
+  const handleNewSession = () => {
+    setCurrentState("question");
+    setIsRecording(false);
+  };
 
   return (
-    <div className="flex w-full h-screen font-sans bg-slate-50">
-      <Sidebar 
-        sessions={sessions} 
-        activeSessionId={activeSessionId}
-        onNewChat={handleNewChat}
-        onSelectSession={setActiveSessionId}
+    <div className="h-screen w-full flex bg-[#F8FAFC] overflow-hidden font-sans text-slate-800">
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onNewSession={handleNewSession}
       />
-      
-      {activeSession ? (
-        <ChatArea 
-          messages={activeSession.messages} 
-          onSendMessage={handleSendMessage} 
-        />
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
-          <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-            <span className="text-2xl">👋</span>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Header - Calm & Minimalist */}
+        <header className="h-[72px] border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center shrink-0">
+          <div className="w-full px-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-500"
+              >
+                <Menu className="size-5" />
+              </button>
+              <h1 className="text-2xl font-bold text-blue-600 tracking-tight">
+                Intervon
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
+                <span className="text-slate-700 text-sm font-medium hidden sm:inline">Software Engineer</span>
+                <span className="text-slate-700 text-sm font-medium sm:hidden">S.E.</span>
+                <ChevronDown className="size-4 text-slate-400" />
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
+                <span className="text-slate-700 text-sm font-medium">Junior</span>
+                <ChevronDown className="size-4 text-slate-400" />
+              </button>
+            </div>
           </div>
-          <h2 className="text-xl font-semibold mb-2 text-slate-700">Selamat datang di Intervon</h2>
-          <p>Pilih atau buat sesi baru di sidebar untuk memulai simulasi interview.</p>
+        </header>
+
+        {/* Chat Interface Area */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
+          <div className="max-w-4xl mx-auto flex flex-col gap-6">
+            
+            {/* State 1: Model asks question */}
+            <ChatMessage
+              role="ai"
+              content="Can you tell me about a time you faced a conflict in a team project?"
+            />
+
+            {/* State 3 & 4: Transcribing / Final Answer */}
+            {(currentState === "processing" || currentState === "feedback") && (
+              <ChatMessage
+                role="user"
+                isTranscribing={currentState === "processing"}
+                content={
+                  currentState === "processing"
+                    ? "Transcribing audio..."
+                    : "Well, during my final year capstone project, we had a disagreement about the tech stack. I advocated for using React because most of our team was familiar with it, while one team member insisted on Vue.js. I organized a meeting where we discussed the pros and cons, and we eventually decided to go with React based on team expertise and project timeline."
+                }
+              />
+            )}
+
+            {/* State 3: AI Processing Loader */}
+            {currentState === "processing" && (
+              <ChatMessage role="ai" content="" isLoading />
+            )}
+
+            {/* State 4: AI Feedback */}
+            {currentState === "feedback" && (
+              <ChatMessage
+                role="ai"
+                content={
+                  <div className="flex flex-col">
+                    <FeedbackCard
+                      score="excellent"
+                      feedback="Great use of the STAR method! You clearly described the **Situation** (team conflict about tech stack), your **Task** (resolving it), the **Action** (organizing a discussion), and the **Result** (team consensus). To make this even stronger, consider adding specific metrics about the project outcome or how the decision improved team productivity."
+                    />
+                    
+                    {/* State 5: Inline Next Actions */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                      className="flex items-center gap-3 pt-5 mt-5 border-t border-slate-100 flex-wrap"
+                    >
+                      <button
+                        onClick={handleClarify}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors"
+                      >
+                        <MessageCircle className="size-4" />
+                        Lanjut Ngobrol / Clarify
+                      </button>
+
+                      <button
+                        onClick={handleNextQuestion}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all shadow-sm shadow-blue-200"
+                      >
+                        Next Question
+                        <ArrowRight className="size-4" />
+                      </button>
+                    </motion.div>
+                  </div>
+                }
+              />
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Action/Input Area (Sticky Bottom) */}
+        <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-200 p-6 z-20">
+          <VoiceInputPanel
+            isRecording={isRecording}
+            currentState={currentState}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onTextInput={handleTextInput}
+          />
+        </div>
+      </div>
     </div>
   );
-};
-
-export default App;
+}
