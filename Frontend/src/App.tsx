@@ -5,6 +5,7 @@ import { VoiceInputPanel } from "./components/VoiceInputPanel";
 import { FeedbackCard } from "./components/FeedbackCard";
 import { Sidebar } from "./components/Sidebar";
 import { motion } from "motion/react";
+import { Header } from "./components/Header";
 
 type UIState = "question" | "recording" | "processing" | "feedback";
 
@@ -115,33 +116,7 @@ export default function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Header - Calm & Minimalist */}
-        <header className="h-[72px] border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center shrink-0">
-          <div className="w-full px-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-500"
-              >
-                <Menu className="size-5" />
-              </button>
-              <h1 className="text-2xl font-bold text-blue-600 tracking-tight hidden sm:block">
-                Intervon
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
-                <span className="text-slate-700 text-sm font-medium hidden sm:inline">Software Engineer</span>
-                <span className="text-slate-700 text-sm font-medium sm:hidden">S.E.</span>
-                <ChevronDown className="size-4 text-slate-400" />
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
-                <span className="text-slate-700 text-sm font-medium">Junior</span>
-                <ChevronDown className="size-4 text-slate-400" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         {/* Chat Interface Area */}
         <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
