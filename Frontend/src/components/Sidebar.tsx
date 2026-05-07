@@ -99,7 +99,8 @@ export function Sidebar({ isOpen, onClose, onNewSession }: SidebarProps) {
           </div>
 
           {/* Scrollable Content (Accordions) */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pb-6">
+          {/* <div className="flex-1 overflow-y-auto custom-scrollbar pb-6"> */}
+          <div className="flex-1 overflow-y-auto pb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             
             {/* 1. CURRENT SESSION */}
             <SectionHeader icon={MessageSquare} title="Current Session" section="current" />
