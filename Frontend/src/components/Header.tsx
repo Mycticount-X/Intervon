@@ -11,9 +11,14 @@ interface RoleOption {
   short: string;
 }
 
+type LevelOption = "Junior" | "Senior" | "Lead";
+
 export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [selectedRole, setSelectedRole] = useState<string>("Software Engineer");
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState<boolean>(false);
+
+  const [selectedLevel, setSelectedLevel] = useState<LevelOption>("Junior");
+  const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState<boolean>(false);
 
   const roleOptions: RoleOption[] = [
     { full: "Software Engineer", short: "S.E." },
@@ -21,6 +26,8 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     { full: "Data Analyst", short: "D.A." },
     { full: "Product Manager", short: "P.M." }
   ];
+
+  const levelOptions: LevelOption[] = ["Junior", "Senior", "Lead"];
 
   const currentShortRole = roleOptions.find(r => r.full === selectedRole)?.short;
 
@@ -44,24 +51,23 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         {/* Bagian Kanan */}
         <div className="flex items-center gap-3">
           
-          {/* Dropdown Role */}
+          {/* Role */}
           <div className="relative">
             <button 
-              onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+              onClick={() => {
+                setIsRoleDropdownOpen(!isRoleDropdownOpen);
+                setIsLevelDropdownOpen(false); 
+              }}
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
             >
               <span className="text-slate-700 text-sm font-medium hidden sm:inline">{selectedRole}</span>
               <span className="text-slate-700 text-sm font-medium sm:hidden">{currentShortRole}</span>
-              <ChevronDown className={`size-4 text-slate-400 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isRoleDropdownOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsRoleDropdownOpen(false)} 
-                />
-                
+                <div className="fixed inset-0 z-40" onClick={() => setIsRoleDropdownOpen(false)} />
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50 py-1">
                   {roleOptions.map((role, idx) => (
                     <button
@@ -82,11 +88,41 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             )}
           </div>
 
-          {/* Tombol Level */}
-          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
-            <span className="text-slate-700 text-sm font-medium">Junior</span>
-            <ChevronDown className="size-4 text-slate-400" />
-          </button>
+          {/* Level */}
+          <div className="relative">
+            <button 
+              onClick={() => {
+                setIsLevelDropdownOpen(!isLevelDropdownOpen);
+                setIsRoleDropdownOpen(false);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+            >
+              <span className="text-slate-700 text-sm font-medium">{selectedLevel}</span>
+              <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isLevelDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isLevelDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsLevelDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50 py-1">
+                  {levelOptions.map((level, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedLevel(level);
+                        setIsLevelDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 ${
+                        selectedLevel === level ? 'text-blue-600 font-semibold bg-blue-50/50' : 'text-slate-700'
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           
         </div>
       </div>
