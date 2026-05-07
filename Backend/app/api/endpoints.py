@@ -1,7 +1,12 @@
-from fastapi import APIRouter, File, UploadFile, Form
+from fastapi import APIRouter, File, UploadFile, Form, Query
 from app.services.whisper_svc import transcribe_audio
 from app.services.pinecone_svc import search
 from app.services.groq_svc import evaluate_answer
+import os
+import json
+from typing import Optional
+
+
 
 router = APIRouter()
 
@@ -9,7 +14,6 @@ router = APIRouter()
 async def evaluate_interview(
     question_id:str = Form(...),
     role:str = Form(...),
-    experience:str = Form(...),
     file: UploadFile = File(...),
 ): 
     """Endpoint utama untuk evaluation user answer"""
@@ -19,7 +23,8 @@ async def evaluate_interview(
     if "Error" in user_answer:
         return {"error": "Gagal transkrip audio"}
     
-    pinecone_res = search(user_answer,question_id, role, experience)
+    pinecone_res = search(user_answer,question_id, role)
+    
     if "error" in pinecone_res:
         return {"error": pinecone_res["error"]}
     ideal_answer = pinecone_res.get("ideal_answer", "")
@@ -27,12 +32,10 @@ async def evaluate_interview(
 
     if not ideal_answer:
         return {"error": "Kunci jawaban tidak ditemukan di database."}
-
-    evaluation_result = evaluate_answer(user_answer,ideal_answer)
-    if "error" in evaluation_result:
-        return {"error": evaluation_result["error"]}
     
     ragas_eval = evaluate_answer(user_answer, ideal_answer)
+    if "error" in ragas_eval:
+        return {"error": ragas_eval["error"]}
     return {
         "user_transcription": user_answer,
         "ideal_answer": ideal_answer,
@@ -44,4 +47,36 @@ async def evaluate_interview(
         "feedback": ragas_eval.get("summary_feedback"),
         "comparison_points": ragas_eval.get("comparison_points")
     }
+
+@router.get("/questions")
+def get_question(role: Optional[str] = Query(None,description="Filter soal based on Role")): 
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) #krna naik 3x ya -api-app-backend
+    json_path = os.path.join(base_dir, "dataset.json")
+    try: 
+        with open(json_path, "r", encoding="utf-8") as f: 
+            data = json.load(f)
+
+        format_data = [ 
+            {
+                "id": item.get("id"),
+                "question": item.get("question"),
+                "role": item.get("role"),
+            }
+            for item in data
+        ]
+        
+
+        if role: 
+            filtered_data = [item for item in format_data if item.get("role").lower() == role.lower()]
+            return { 
+                "total":  len(filtered_data),
+                "data": filtered_data
+            }
+        
+        return { 
+            "total": len(format_data),
+            "data": format_data,
+        }
+    except Exception as e: 
+        return {"error": f"Gagal membaca dataset: {str(e)}"}
 

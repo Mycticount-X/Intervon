@@ -26,7 +26,7 @@ def test_search():
         return f"error: {e}"
 
 
-def search(user_answer:str, question_id: str, role:str, experience:str) -> dict:
+def search(user_answer:str, question_id: str, role:str) -> dict:
     try: 
         search_result = index.search(
             namespace="__default__",
@@ -37,13 +37,12 @@ def search(user_answer:str, question_id: str, role:str, experience:str) -> dict:
             filter={
                 "question_id": {"$eq": question_id}, 
                 "role": {"$eq":role },
-                "experience": {"$eq":experience}
             },
         )
-        print("ini search result", search_result)
         if search_result.result.hits:
             match = search_result.result.hits[0]
-            ideal_answer = match.fields.get("answer", "")
+            print("ini match", match)
+            ideal_answer = match.fields.get("ideal_answer", "")
             return {
                 "ideal_answer": ideal_answer,
                 "embeding_score": match.score
