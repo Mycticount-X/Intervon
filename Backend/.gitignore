@@ -42,3 +42,6 @@ wheels/
 
 # Audio uploads (test files)
 audio_uploads/
+
+contohjson.json
+upsert_test.py
