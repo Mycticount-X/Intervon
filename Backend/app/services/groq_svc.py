@@ -17,7 +17,7 @@ def test_groq_connection():
     except Exception as e:
         return f"Error {e}"
 
-def evaluate_answer(user_answer:str, ideal_answer:str)->dict:
+def evaluate_answer(user_answer:str, ideal_answer:str, question:str)->dict:
     system_prompt =  """Kamu adalah evaluator wawancara kerja AI. 
     Bandingkan "Jawaban User" dengan "Jawaban Ideal".
     Keluarkan HANYA JSON valid dengan struktur persis seperti ini:
@@ -30,8 +30,10 @@ def evaluate_answer(user_answer:str, ideal_answer:str)->dict:
             {"point": "<Poin kriteria ideal 2>", "mentioned": true/false}
         ]
     }
+    RULES :
+    - Array "comparison_points" HANYA BOLEH berisi MAKSIMAL 3 poin. Pilih 3 kriteria paling krusial/penting dari Jawaban Ideal untuk dievaluasi.
     """ 
-    user_prompt = f"Jawbaan ideal: \n{ideal_answer}\n\n Jawaban user:\n{user_answer}"
+    user_prompt = f"Pertanyaan Wawancara: \n{question}\n\n Jawbaan ideal: \n{ideal_answer}\n\n Jawaban user:\n{user_answer}"
     try: 
         response = groq_client.chat.completions.create(
             messages=[{"role": "system", "content": system_prompt}, {"role":"user", "content": user_prompt}],

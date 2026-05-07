@@ -24,7 +24,7 @@ async def evaluate_interview(
         return {"error": "Gagal transkrip audio"}
     
     pinecone_res = search(user_answer,question_id, role)
-    
+
     if "error" in pinecone_res:
         return {"error": pinecone_res["error"]}
     ideal_answer = pinecone_res.get("ideal_answer", "")
@@ -33,9 +33,24 @@ async def evaluate_interview(
     if not ideal_answer:
         return {"error": "Kunci jawaban tidak ditemukan di database."}
     
-    ragas_eval = evaluate_answer(user_answer, ideal_answer)
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    json_path = os.path.join(base_dir, "dataset.json")
+    question_text = ""
+    try: 
+        with open(json_path, "r", encoding="utf-8") as f: 
+            data = json.load(f)
+            for item in data: 
+                if item.get("id") == question_id:
+                    question_text = item.get("question", "")
+                    break
+    except: 
+        pass
+
+    ragas_eval = evaluate_answer(user_answer, ideal_answer, question_text)
     if "error" in ragas_eval:
         return {"error": ragas_eval["error"]}
+    
+    
     return {
         "user_transcription": user_answer,
         "ideal_answer": ideal_answer,
