@@ -1,17 +1,17 @@
-from fastapi import APIRouter, File, UploadFile, Form, Query
+from fastapi import APIRouter, File, UploadFile, Form, Query, HTTPException
 from app.services.whisper_svc import transcribe_audio
 from app.services.pinecone_svc import search
 from app.services.groq_svc import evaluate_answer
 from app.utils.nlp_utils import calculate_tfidf_similarity
+from app.models.schema import EvalResponse , QuestionListResponse
 import os
 import json
 from typing import Optional
 
 
-
 router = APIRouter()
 
-@router.post("/evaluate")
+@router.post("/evaluate", response_model=EvalResponse)
 async def evaluate_interview(
     question_id:str = Form(...),
     role:str = Form(...),
@@ -22,17 +22,17 @@ async def evaluate_interview(
     file_bytes = await file.read()
     user_answer =transcribe_audio(file.filename, file_bytes)
     if "Error" in user_answer:
-        return {"error": "Gagal transkrip audio"}
+        raise HTTPException(status_code=500, detail="Failed to transcribe audio")
     
     pinecone_res = search(user_answer,question_id, role)
 
     if "error" in pinecone_res:
-        return {"error": pinecone_res["error"]}
+        raise HTTPException(status_code=500, detail=pinecone_res["error"])
     ideal_answer = pinecone_res.get("ideal_answer", "")
     embedding_score = pinecone_res.get("embeding_score", "0.0")
 
     if not ideal_answer:
-        return {"error": "Kunci jawaban tidak ditemukan di database."}
+        raise HTTPException(status_code=400, detail="Ideal answer not found")
     
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     json_path = os.path.join(base_dir, "dataset.json")
@@ -49,7 +49,7 @@ async def evaluate_interview(
 
     ragas_eval = evaluate_answer(user_answer, ideal_answer, question_text)
     if "error" in ragas_eval:
-        return {"error": ragas_eval["error"]}
+        raise HTTPException(status_code=500, detail=ragas_eval["error"])
     
     # ------------------ HITUNG TF-IDF ------------------
     tfidf_score = calculate_tfidf_similarity(user_answer, ideal_answer)
@@ -70,7 +70,7 @@ async def evaluate_interview(
         "comparison_points": ragas_eval.get("comparison_points")
     }
 
-@router.get("/questions")
+@router.get("/questions", response_model=QuestionListResponse)
 def get_question(role: Optional[str] = Query(None,description="Filter soal based on Role")): 
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) #krna naik 3x ya -api-app-backend
     json_path = os.path.join(base_dir, "dataset.json")
@@ -100,5 +100,8 @@ def get_question(role: Optional[str] = Query(None,description="Filter soal based
             "data": format_data,
         }
     except Exception as e: 
-        return {"error": f"Gagal membaca dataset: {str(e)}"}
+        raise HTTPException(
+        status_code=500,
+        detail=f"Gagal membaca dataset: {str(e)}"
+    )
 
