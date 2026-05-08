@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, Form, Query
 from app.services.whisper_svc import transcribe_audio
 from app.services.pinecone_svc import search
 from app.services.groq_svc import evaluate_answer
+from app.utils.nlp_utils import calculate_tfidf_similarity
 import os
 import json
 from typing import Optional
@@ -50,14 +51,20 @@ async def evaluate_interview(
     if "error" in ragas_eval:
         return {"error": ragas_eval["error"]}
     
-    
+    # ------------------ HITUNG TF-IDF ------------------
+    tfidf_score = calculate_tfidf_similarity(user_answer, ideal_answer)
+    answer_relevance = float(ragas_eval.get("answer_relevance", 0.0))
+    ragas_faithfulness = float(ragas_eval.get("faithfulness", 0.0))
+    final_score = round((answer_relevance + ragas_faithfulness) / 2, 4)
     return {
         "user_transcription": user_answer,
         "ideal_answer": ideal_answer,
         "metrics": {
             "embedding_similarity_score": embedding_score,
-            "ragas_answer_relevance": ragas_eval.get("answer_relevance"),
-            "ragas_faithfulness": ragas_eval.get("faithfulness")
+            "ragas_answer_relevance": answer_relevance,
+            "ragas_faithfulness": ragas_faithfulness,
+            "ragas_final_score": final_score,
+            "tfidf_cosine_score": tfidf_score,
         },
         "feedback": ragas_eval.get("summary_feedback"),
         "comparison_points": ragas_eval.get("comparison_points")
