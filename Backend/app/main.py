@@ -1,9 +1,15 @@
-from fastapi import FastAPI, File,  UploadFile
-from app.services.groq_svc import test_groq_connection
-from app.services.whisper_svc import transcribe_audio
-from app.services.pinecone_svc import pinecone_connection, test_search
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import router as interview_router
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 app.include_router(interview_router, prefix="/api", tags=["interview"])
