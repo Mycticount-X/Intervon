@@ -9,7 +9,9 @@ def transcribe_audio(filename:str, file_bytes:bytes) -> str:
             file=(filename, file_bytes),
             model="whisper-large-v3",
             response_format="json",
+            language="en"
         ) 
+        print("Ini transciption text: " ,transcription.text)
         return transcription.text
     except Exception as e:
         return f"Error transcribing audio: {e}"
