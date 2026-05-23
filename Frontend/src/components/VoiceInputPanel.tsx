@@ -24,162 +24,118 @@ export function VoiceInputPanel({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const [waveformData, setWaveformData] = useState<Uint8Array | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Initialize audio capture when recording starts
-  useEffect(() => {
-    if (!isRecording) {
-      return; // Don't do anything if not recording
+  // Cleanup Function
+  const stopMicrophoneAndCleanup = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
 
-    if (mediaRecorderRef.current) {
-      return; // Already recording
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
 
-    // Clear the previous recording URL and data when starting a new one
-    if (recordedAudioUrl) {
-      URL.revokeObjectURL(recordedAudioUrl);
-      setRecordedAudioUrl(null);
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
+
     setWaveformData(null);
-    
-    initializeAudioCapture();
+  };
+
+  // Recording Effect
+  useEffect(() => {
+    if (isRecording) {
+      const startCapture = async () => {
+        try {
+          if (recordedAudioUrl) {
+            URL.revokeObjectURL(recordedAudioUrl);
+            setRecordedAudioUrl(null);
+          }
+          audioChunksRef.current = [];
+
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          streamRef.current = stream;
+
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            if (audioChunksRef.current.length > 0) {
+              const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+              const url = URL.createObjectURL(audioBlob);
+              setRecordedAudioUrl(url);
+
+              if (onAudioRecorded) {
+                onAudioRecorded(audioBlob);
+              }
+            }
+            stopMicrophoneAndCleanup();
+          };
+
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current = audioContext;
+          const source = audioContext.createMediaStreamSource(stream);
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          analyserRef.current = analyser;
+
+          const visualize = () => {
+            if (!analyserRef.current) return;
+            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            analyserRef.current.getByteFrequencyData(dataArray);
+            setWaveformData(new Uint8Array(dataArray));
+            animationFrameRef.current = requestAnimationFrame(visualize);
+          };
+
+          mediaRecorder.start();
+          visualize();
+
+        } catch (error) {
+          console.error("Mic access denied or error:", error);
+          alert("Gagal mengakses mikrofon. Pastikan Anda telah memberikan izin di browser.");
+          onStopRecording();
+        }
+      };
+
+      startCapture();
+    } else {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      } else {
+        stopMicrophoneAndCleanup(); 
+      }
+    }
+
+    return () => {};
   }, [isRecording]);
 
-  // Cleanup: revoke object URL when component unmounts
+  // Unmount Cleanup
   useEffect(() => {
     return () => {
       if (recordedAudioUrl) {
         URL.revokeObjectURL(recordedAudioUrl);
       }
-      // Full cleanup on unmount
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      stopMicrophoneAndCleanup();
     };
   }, [recordedAudioUrl]);
 
-  const initializeAudioCapture = async () => {
-    try {
-      // Aggressive cleanup of any existing resources
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-        audioContextRef.current.close();
-      }
-      audioContextRef.current = null;
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current = null;
-      }
-      setWaveformData(null);
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Set up MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        if (audioChunksRef.current.length === 0) {
-          console.warn("No audio data recorded");
-          return;
-        }
-
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(audioBlob);
-        
-        // Clean up old URL if it exists
-        if (recordedAudioUrl) {
-          URL.revokeObjectURL(recordedAudioUrl);
-        }
-        
-        setRecordedAudioUrl(url);
-        
-        // Callback to parent component
-        if (onAudioRecorded) {
-          onAudioRecorded(audioBlob);
-        }
-
-        // Stop all audio tracks
-        stream.getTracks().forEach((track) => {
-          track.stop();
-        });
-        
-        // Clean up everything
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-        if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-          audioContextRef.current.close();
-        }
-        audioContextRef.current = null;
-        mediaRecorderRef.current = null;
-        setWaveformData(null);
-      };
-
-      mediaRecorder.onerror = (event) => {
-        console.error("MediaRecorder error:", event.error);
-        alert(`Recording error: ${event.error}`);
-      };
-
-      mediaRecorder.start();
-
-      // Set up Web Audio API for visualization
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048; // Increased for better sensitivity
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-
-      analyserRef.current = analyser;
-
-      // Animation loop for visualization
-      let isActive = true;
-      const visualize = () => {
-        if (!isActive) return;
-        
-        if (analyserRef.current) {
-          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-          analyserRef.current.getByteFrequencyData(dataArray);
-          setWaveformData(new Uint8Array(dataArray)); // Create a copy
-        }
-        animationFrameRef.current = requestAnimationFrame(visualize);
-      };
-
-      visualize();
-
-      // Cleanup function to stop visualization
-      return () => {
-        isActive = false;
-      };
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
-      alert("Unable to access microphone. Please check permissions.");
-      onStopRecording();
-    }
-  };
-
+  // --- EVENT HANDLERS ---
   const handleStopClick = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-    }
     onStopRecording();
   };
 
@@ -192,6 +148,7 @@ export function VoiceInputPanel({
     }
   };
 
+  // Render UI
   if (currentState === "processing") {
     return (
       <div className="w-full max-w-2xl mx-auto flex items-center justify-center py-4">
@@ -236,7 +193,7 @@ export function VoiceInputPanel({
         </motion.div>
       ) : (
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4">
-          {/* Real Waveform Visualizer */}
+          {/* Waveform Visualizer */}
           <AudioVisualizer waveformData={waveformData} />
 
           <button
