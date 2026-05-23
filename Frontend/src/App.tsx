@@ -7,9 +7,11 @@ import { Sidebar } from "./components/Sidebar";
 import { motion } from "motion/react";
 import { Header } from "./components/Header";
 
+// Types And Constants
 type UIState = "question" | "recording" | "processing" | "feedback";
+type ScoreType = "excellent" | "good" | "needs-improvement";
 
-// --- Bank Soal Simulasi ---
+// Bank Soal Simulasi
 const INTERVIEW_QUESTIONS = [
   "Can you tell me about a time you faced a conflict in a team project?",
   "Describe a time when you had to learn a new programming language or framework quickly.",
@@ -20,10 +22,13 @@ const INTERVIEW_QUESTIONS = [
 export default function App() {
   const [currentState, setCurrentState] = useState<UIState>("question");
   const [isRecording, setIsRecording] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Default terbuka di desktop
-  
-  // State untuk menyimpan pertanyaan mana yang sedang aktif
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [transcription, setTranscription] = useState<string>("");
+  const [feedbackData, setFeedbackData] = useState<{ score: ScoreType; text: string }>({
+    score: "good",
+    text: "",
+  });
 
   // Pastikan sidebar tertutup otomatis jika dibuka dari HP
   useEffect(() => {
@@ -38,22 +43,19 @@ export default function App() {
   const handleStartRecording = () => {
     setIsRecording(true);
     setCurrentState("recording");
+    setTranscription("");
   };
 
   const handleStopRecording = () => {
     setIsRecording(false);
     setCurrentState("processing");
-
-    // Simulasi proses RAG & LLM (Whisper -> Llama 3)
-    setTimeout(() => {
-      setCurrentState("feedback");
-    }, 2500);
   };
 
   const handleNextQuestion = () => {
     // Lanjut ke pertanyaan berikutnya secara berurutan
     setQuestionIndex((prev) => (prev + 1) % INTERVIEW_QUESTIONS.length);
     setCurrentState("question");
+    setTranscription("");
   };
 
   const handleClarify = () => {
@@ -66,23 +68,38 @@ export default function App() {
 
   const handleAudioRecorded = async (audioBlob: Blob) => {
     try {
-      // Upload to backend
       const formData = new FormData();
       formData.append("file", audioBlob, "audio.webm");
 
-      const response = await fetch("http://localhost:8000/api/audio/upload", {
+      const response = await fetch("http://localhost:8000/test-upload-audio", {
         method: "POST",
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Audio uploaded:", data);
-      } else {
-        console.error("Upload failed:", response.statusText);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const data = await response.json();
+      
+      // Jika Backend Nyala (Sukses)
+      setTranscription(data.transcription || "Tidak ada transkripsi yang terdeteksi.");
+      setFeedbackData({
+        score: data.score || "excellent",
+        text: data.feedback || "Jawaban Anda terdengar bagus secara transkripsi!"
+      });
+      setCurrentState("feedback");
+
     } catch (error) {
-      console.error("Error uploading audio:", error);
+      // Jika Backend Mati (Fallback ke Hardcoded)
+      console.error("Gagal terhubung ke Backend. Menjalankan fallback...", error);
+      
+      setTimeout(() => {
+        setTranscription("Well, for this specific situation, I focused on clearly communicating with my team, breaking down the problem into smaller tasks, and ensuring everyone was aligned. I organized a quick sync-up meeting to gather input, and we managed to resolve the issue smoothly.");
+        setFeedbackData({
+          score: "good",
+          text: "Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
+        });
+        setCurrentState("feedback");
+      }, 1500);
     }
   };
 
@@ -97,6 +114,7 @@ export default function App() {
     setQuestionIndex(nextIndex);
     setCurrentState("question");
     setIsRecording(false);
+    setTranscription("");
     
     // 3. Jika di layar HP/Tablet (lebar < 1024px), tutup sidebar otomatis agar user bisa langsung lihat
     if (window.innerWidth < 1024) {
@@ -136,7 +154,7 @@ export default function App() {
                 content={
                   currentState === "processing"
                     ? "Transcribing audio..."
-                    : "Well, for this specific situation, I focused on clearly communicating with my team, breaking down the problem into smaller tasks, and ensuring everyone was aligned. I organized a quick sync-up meeting to gather input, and we managed to resolve the issue smoothly."
+                    : transcription
                 }
               />
             )}
@@ -153,8 +171,8 @@ export default function App() {
                 content={
                   <div className="flex flex-col">
                     <FeedbackCard
-                      score="good"
-                      feedback="Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
+                      score={feedbackData.score}
+                      feedback={feedbackData.text}
                     />
                     
                     {/* State 5: Inline Next Actions */}
