@@ -209,28 +209,28 @@ export function VoiceInputPanel({
         aria-live="polite"
       >
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-4 w-full">
+          <div className="flex w-full items-center gap-3 sm:gap-4">
             <button
               type="button"
               disabled
               aria-busy="true"
-              className="relative flex-1 overflow-hidden bg-blue-600/90 text-white py-4 rounded-full font-medium text-base sm:text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-200 cursor-wait disabled:opacity-95"
+              className="relative flex min-h-14 min-w-0 flex-1 cursor-wait items-center justify-center gap-3 overflow-hidden rounded-full bg-blue-600/90 px-4 py-3.5 text-sm font-medium text-white shadow-lg shadow-blue-200 disabled:opacity-95 sm:py-4 sm:text-lg"
             >
               <motion.span
                 className="absolute inset-y-0 left-0 w-1/3 bg-white/20 blur-sm"
                 animate={{ x: ["-120%", "360%"] }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
               />
-              <span className="relative flex items-center justify-center gap-3">
-                <LoaderCircle className="size-5 sm:size-6 animate-spin" />
-                <span>Analyzing your answer...</span>
+              <span className="relative flex min-w-0 items-center justify-center gap-2 sm:gap-3">
+                <LoaderCircle className="size-5 shrink-0 animate-spin sm:size-6" />
+                <span className="text-center leading-tight">Analyzing your answer...</span>
               </span>
             </button>
 
             <button
               type="button"
               disabled
-              className="p-4 bg-white border border-slate-200 text-slate-400 rounded-full flex-shrink-0 shadow-sm cursor-not-allowed opacity-70"
+              className="flex-shrink-0 cursor-not-allowed rounded-full border border-slate-200 bg-white p-3.5 text-slate-400 opacity-70 shadow-sm sm:p-4"
               title="Text input disabled while analyzing"
             >
               <Keyboard className="size-6" />
@@ -257,10 +257,10 @@ export function VoiceInputPanel({
     <div className="w-full max-w-2xl mx-auto">
       {!isRecording ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-4 w-full">
+          <div className="flex w-full items-center gap-3 sm:gap-4">
             <button
               onClick={onStartRecording}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-full font-medium text-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-200 hover:shadow-xl hover:-translate-y-0.5"
+              className="flex min-h-14 min-w-0 flex-1 items-center justify-center gap-3 rounded-full bg-blue-600 px-4 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl sm:py-4 sm:text-lg"
             >
               <Mic className="size-6" />
               <span>Tap to Speak</span>
@@ -268,7 +268,7 @@ export function VoiceInputPanel({
 
             <button
               onClick={onTextInput}
-              className="p-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-full transition-colors flex-shrink-0 shadow-sm"
+              className="flex-shrink-0 rounded-full border border-slate-200 bg-white p-3.5 text-slate-600 shadow-sm transition-colors hover:bg-slate-50 sm:p-4"
               title="Type instead (Fallback)"
             >
               <Keyboard className="size-6" />

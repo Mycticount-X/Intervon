@@ -24,7 +24,9 @@ const DEMO_AUDIO_ANSWER =
 export default function App() {
   const [currentState, setCurrentState] = useState<UIState>("question");
   const [isRecording, setIsRecording] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Default terbuka di desktop
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window === "undefined" ? true : window.innerWidth >= 1024
+  );
   const [textInputOpen, setTextInputOpen] = useState(false);
   const [submittedAnswer, setSubmittedAnswer] = useState<string | null>(null);
   
@@ -128,7 +130,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-full flex bg-[#F8FAFC] overflow-hidden font-sans text-slate-800">
+    <div className="flex h-[100dvh] w-full max-w-full overflow-hidden bg-[#F8FAFC] font-sans text-slate-800">
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -137,13 +139,13 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="relative flex w-full min-w-0 flex-1 flex-col">
         {/* Header - Calm & Minimalist */}
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         {/* Chat Interface Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
-          <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 pb-36 sm:px-4 sm:py-6 sm:pb-40">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 sm:gap-6">
             
             {/* State 1: Model asks question (Dinamis dari Bank Soal) */}
             <AnimatePresence mode="wait" initial={false}>
@@ -186,11 +188,11 @@ export default function App() {
                     {/* State 5: Inline Next Actions */}
                     <motion.div 
                       initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                      className="flex items-center gap-3 pt-5 mt-5 border-t border-slate-100 flex-wrap"
+                      className="mt-5 flex flex-col items-stretch gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:flex-wrap"
                     >
                       <button
                         onClick={handleClarify}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors"
+                        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
                       >
                         <MessageCircle className="size-4" />
                         Lanjut Ngobrol / Clarify
@@ -198,7 +200,7 @@ export default function App() {
 
                       <button
                         onClick={handleNextQuestion}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all shadow-sm shadow-blue-200"
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 sm:w-auto"
                       >
                         Next Question
                         <ArrowRight className="size-4" />
@@ -212,7 +214,7 @@ export default function App() {
         </div>
 
         {/* Action/Input Area (Sticky Bottom) */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-200 p-6 z-20">
+        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-slate-200 bg-white/80 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 backdrop-blur-md sm:p-6">
           <VoiceInputPanel
             isRecording={isRecording}
             currentState={currentState}
