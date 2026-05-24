@@ -17,24 +17,31 @@ export function ChatMessage({ role, content, isLoading, isTranscribing }: ChatMe
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className={`flex min-w-0 items-start gap-3 sm:gap-4 ${isAI ? "flex-row" : "flex-row-reverse"}`}
     >
       {/* Avatar */}
-      <div className={`flex-shrink-0 size-8 rounded-full flex items-center justify-center sm:size-10 ${isAI ? "bg-blue-100" : "bg-blue-600"} ${role === "ai" && !isLoading ? "mt-1" : ""}`}>
+      <motion.div
+        initial={{ scale: 0.96 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className={`flex-shrink-0 size-8 rounded-full flex items-center justify-center sm:size-10 ${isAI ? "bg-blue-100" : "bg-blue-600"} ${role === "ai" && !isLoading ? "mt-1" : ""}`}
+      >
         {isAI ? (
           <Bot className="size-4 text-blue-600 sm:size-5" />
         ) : (
           <User className="size-4 text-white sm:size-5" />
         )}
-      </div>
+      </motion.div>
 
       {/* Chat Bubble */}
-      <div
-        className={`max-w-[calc(100%-2.75rem)] overflow-hidden break-words px-4 py-3.5 text-sm leading-relaxed shadow-sm sm:max-w-[75%] sm:px-6 sm:py-4 sm:text-[15px] ${
+      <motion.div
+        whileHover={{ y: -1 }}
+        transition={{ duration: 0.16, ease: "easeOut" }}
+        className={`max-w-[calc(100%-2.75rem)] overflow-hidden break-words px-4 py-3.5 text-sm leading-relaxed shadow-sm transition-shadow duration-200 sm:max-w-[75%] sm:px-6 sm:py-4 sm:text-[15px] ${
           isAI
-            ? "bg-white border border-slate-100 text-slate-800 rounded-2xl rounded-tl-sm"
-            : "bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-blue-200"
+            ? "bg-white border border-slate-100 text-slate-800 rounded-2xl rounded-tl-sm hover:shadow-md"
+            : "bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-blue-200 hover:shadow-md hover:shadow-blue-200"
         } ${isTranscribing ? "bg-blue-500 opacity-90" : ""}`}
       >
         {isLoading ? (
@@ -55,7 +62,7 @@ export function ChatMessage({ role, content, isLoading, isTranscribing }: ChatMe
         ) : (
           <div className="whitespace-pre-wrap">{content}</div>
         )}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

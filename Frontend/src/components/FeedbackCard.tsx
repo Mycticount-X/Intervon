@@ -1,4 +1,5 @@
 import { CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
+import { motion } from "motion/react";
 import React from "react";
 
 interface FeedbackCardProps {
@@ -43,20 +44,35 @@ export function FeedbackCard({ score, feedback }: FeedbackCardProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, ease: "easeOut" }}
+      className="space-y-4"
+    >
       {/* Badge Score */}
-      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${config.bg}`}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2, delay: 0.06, ease: "easeOut" }}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${config.bg}`}
+      >
         <Icon className={`size-4 ${config.color}`} />
         <span className={`text-sm font-semibold ${config.color}`}>{config.label}</span>
-      </div>
+      </motion.div>
 
       {/* Text Feedback */}
-      <div className="space-y-2">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, delay: 0.12, ease: "easeOut" }}
+        className="space-y-2"
+      >
         <h4 className="text-slate-500 font-medium text-sm uppercase tracking-wider">Feedback</h4>
         <p className="text-slate-700 leading-relaxed text-[15px]">
           {renderFeedbackText(feedback)}
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

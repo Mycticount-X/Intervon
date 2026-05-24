@@ -156,60 +156,74 @@ export default function App() {
               />
             </AnimatePresence>
 
-            {/* State 3 & 4: Submitted answer */}
-            {(currentState === "processing" || currentState === "feedback") && (
-              <ChatMessage
-                role="user"
-                isTranscribing={currentState === "processing" && !submittedAnswer}
-                content={
-                  currentState === "processing"
-                    ? submittedAnswer ?? "Transcribing audio..."
-                    : submittedAnswer ?? DEMO_AUDIO_ANSWER
-                }
-              />
-            )}
+            <AnimatePresence mode="popLayout">
+              {/* State 3 & 4: Submitted answer */}
+              {(currentState === "processing" || currentState === "feedback") && (
+                <ChatMessage
+                  key="submitted-answer"
+                  role="user"
+                  isTranscribing={currentState === "processing" && !submittedAnswer}
+                  content={
+                    currentState === "processing"
+                      ? submittedAnswer ?? "Transcribing audio..."
+                      : submittedAnswer ?? DEMO_AUDIO_ANSWER
+                  }
+                />
+              )}
+            </AnimatePresence>
 
             {/* State 3: AI Processing Loader */}
-            {currentState === "processing" && (
-              <ChatMessage role="ai" content="Analyzing your answer..." isLoading />
-            )}
+            <AnimatePresence mode="popLayout">
+              {currentState === "processing" && (
+                <ChatMessage key="answer-loader" role="ai" content="Analyzing your answer..." isLoading />
+              )}
+            </AnimatePresence>
 
             {/* State 4: AI Feedback */}
-            {currentState === "feedback" && (
-              <ChatMessage
-                role="ai"
-                content={
-                  <div className="flex flex-col">
-                    <FeedbackCard
-                      score="good"
-                      feedback="Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
-                    />
-                    
-                    {/* State 5: Inline Next Actions */}
-                    <motion.div 
-                      initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                      className="mt-5 flex flex-col items-stretch gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:flex-wrap"
-                    >
-                      <button
-                        onClick={handleClarify}
-                        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+            <AnimatePresence mode="popLayout">
+              {currentState === "feedback" && (
+                <ChatMessage
+                  key="feedback-result"
+                  role="ai"
+                  content={
+                    <div className="flex flex-col">
+                      <FeedbackCard
+                        score="good"
+                        feedback="Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
+                      />
+                      
+                      {/* State 5: Inline Next Actions */}
+                      <motion.div 
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.18, duration: 0.22, ease: "easeOut" }}
+                        className="mt-5 flex flex-col items-stretch gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:flex-wrap"
                       >
-                        <MessageCircle className="size-4" />
-                        Lanjut Ngobrol / Clarify
-                      </button>
+                        <motion.button
+                          whileHover={{ y: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleClarify}
+                          className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:w-auto"
+                        >
+                          <MessageCircle className="size-4" />
+                          Lanjut Ngobrol / Clarify
+                        </motion.button>
 
-                      <button
-                        onClick={handleNextQuestion}
-                        className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 sm:w-auto"
-                      >
-                        Next Question
-                        <ArrowRight className="size-4" />
-                      </button>
-                    </motion.div>
-                  </div>
-                }
-              />
-            )}
+                        <motion.button
+                          whileHover={{ y: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleNextQuestion}
+                          className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:w-auto"
+                        >
+                          Next Question
+                          <ArrowRight className="size-4" />
+                        </motion.button>
+                      </motion.div>
+                    </div>
+                  }
+                />
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

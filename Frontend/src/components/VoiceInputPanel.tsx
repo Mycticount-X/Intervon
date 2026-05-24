@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Mic, Square, Keyboard, Download, LoaderCircle } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AudioVisualizer } from "./AudioVisualizer";
@@ -255,32 +255,46 @@ export function VoiceInputPanel({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {!isRecording ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4">
+      <AnimatePresence mode="wait">
+        {!isRecording ? (
+        <motion.div
+          key="voice-ready"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="flex flex-col items-center gap-4"
+        >
           <div className="flex w-full items-center gap-3 sm:gap-4">
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onStartRecording}
-              className="flex min-h-14 min-w-0 flex-1 items-center justify-center gap-3 rounded-full bg-blue-600 px-4 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl sm:py-4 sm:text-lg"
+              className="flex min-h-14 min-w-0 flex-1 items-center justify-center gap-3 rounded-full bg-blue-600 px-4 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:py-4 sm:text-lg"
             >
               <Mic className="size-6" />
               <span>Tap to Speak</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onTextInput}
-              className="flex-shrink-0 rounded-full border border-slate-200 bg-white p-3.5 text-slate-600 shadow-sm transition-colors hover:bg-slate-50 sm:p-4"
+              className="flex-shrink-0 rounded-full border border-slate-200 bg-white p-3.5 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:p-4"
               title="Type instead (Fallback)"
             >
               <Keyboard className="size-6" />
-            </button>
+            </motion.button>
           </div>
 
           {recordedAudioUrl && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={downloadAudio}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
             >
               <Download className="size-4" />
               Download last recording
@@ -288,11 +302,26 @@ export function VoiceInputPanel({
           )}
         </motion.div>
       ) : (
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-sm font-medium text-red-600">
-            <span className="size-2 rounded-full bg-red-500 animate-pulse" />
+        <motion.div
+          key="voice-recording"
+          initial={{ scale: 0.96, opacity: 0, y: 8 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-col items-center gap-4"
+        >
+          <motion.div
+            animate={{ boxShadow: ["0 0 0 0 rgba(239,68,68,0.12)", "0 0 0 8px rgba(239,68,68,0)"] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-sm font-medium text-red-600"
+          >
+            <motion.span
+              className="size-2 rounded-full bg-red-500"
+              animate={{ scale: [1, 1.35, 1], opacity: [0.75, 1, 0.75] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            />
             Recording in progress
-          </div>
+          </motion.div>
 
           {/* Real Waveform Visualizer */}
           <AudioVisualizer waveformData={waveformData} />
@@ -303,18 +332,21 @@ export function VoiceInputPanel({
               animate={{ scale: [1, 1.45], opacity: [0.45, 0] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
             />
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={handleStopClick}
-              className="relative w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-200 transition-transform hover:scale-105 active:scale-95"
+              className="relative w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-200 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100"
               aria-label="Stop recording"
             >
               <Square fill="white" className="size-5 text-white" />
-            </button>
+            </motion.button>
           </div>
 
           <p className="text-slate-500 text-sm font-medium mt-1 animate-pulse">Recording... Tap to stop</p>
         </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

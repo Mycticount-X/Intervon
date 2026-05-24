@@ -68,7 +68,7 @@ const settingsOptions: Array<{ id: BooleanSettingId; label: string; sub: string;
 
 function SectionHeader({ icon: Icon, title, section, badge, isActive, onToggle }: SectionHeaderProps) {
   return (
-    <button onClick={() => onToggle(section)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-800/50 transition-colors group">
+    <button onClick={() => onToggle(section)} className="group flex w-full items-center justify-between px-5 py-3.5 transition-colors hover:bg-slate-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/40">
       <div className="flex min-w-0 items-center gap-4">
         <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-800 text-slate-400 group-hover:text-blue-400'}`}><Icon size={18} /></div>
         <span className="truncate font-semibold text-slate-200">{title}</span>
@@ -83,7 +83,7 @@ function SectionHeader({ icon: Icon, title, section, badge, isActive, onToggle }
 
 function ToggleSwitch({ checked, onChange }: ToggleSwitchProps) {
   return (
-    <button onClick={onChange} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-300 ${checked ? 'bg-blue-600' : 'bg-slate-600'}`}>
+    <button onClick={onChange} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 ${checked ? 'bg-blue-600' : 'bg-slate-600'}`}>
       <div className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   );
@@ -153,11 +153,11 @@ export function Sidebar({ isOpen, onClose, onNewSession }: SidebarProps) {
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-bold text-white tracking-wide flex items-center gap-2">Intervon</h1>
               {/* Tombol X ini opsional, karena sekarang hamburger button selalu terlihat */}
-              <button onClick={onClose} className="rounded-lg bg-slate-800 p-1.5 text-slate-400 hover:text-white lg:hidden" aria-label="Close sidebar">
+              <button onClick={onClose} className="rounded-lg bg-slate-800 p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 lg:hidden" aria-label="Close sidebar">
                 <X size={18} />
               </button>
             </div>
-            <button onClick={() => { onNewSession(); onClose(); }} className="w-full bg-[#3B66F5] hover:bg-blue-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+            <button onClick={() => { onNewSession(); onClose(); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3B66F5] py-3 font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-950/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20">
               <Plus size={20} /> New Session
             </button>
           </div>

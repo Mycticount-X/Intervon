@@ -47,7 +47,7 @@ export function TextInputModal({ onClose, onSubmit }: TextInputModalProps) {
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
-        transition={{ duration: 0.18, ease: "easeOut" }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
         onSubmit={handleSubmit}
         onMouseDown={(event) => event.stopPropagation()}
         className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-900/15 sm:p-6"
@@ -63,14 +63,16 @@ export function TextInputModal({ onClose, onSubmit }: TextInputModalProps) {
             </p>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
             aria-label="Close text answer"
           >
             <X className="size-5" />
-          </button>
+          </motion.button>
         </div>
 
         <div className="mt-5">
@@ -97,19 +99,23 @@ export function TextInputModal({ onClose, onSubmit }: TextInputModalProps) {
         </div>
 
         <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
+          <motion.button
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
           >
             Cancel
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
-            className="rounded-full bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 active:scale-[0.98]"
+            className="rounded-full bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
           >
             Submit answer
-          </button>
+          </motion.button>
         </div>
       </motion.form>
     </motion.div>
