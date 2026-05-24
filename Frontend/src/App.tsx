@@ -6,6 +6,7 @@ import { FeedbackCard } from "./components/FeedbackCard";
 import { Sidebar } from "./components/Sidebar";
 import { AnimatePresence, motion } from "motion/react";
 import { Header } from "./components/Header";
+import { TextInputModal } from "./components/TextInputModal";
 
 type UIState = "question" | "recording" | "processing" | "feedback";
 
@@ -17,10 +18,15 @@ const INTERVIEW_QUESTIONS = [
   "Can you share an experience where you made a critical mistake? How did you handle it?"
 ];
 
+const DEMO_AUDIO_ANSWER =
+  "Well, for this specific situation, I focused on clearly communicating with my team, breaking down the problem into smaller tasks, and ensuring everyone was aligned. I organized a quick sync-up meeting to gather input, and we managed to resolve the issue smoothly.";
+
 export default function App() {
   const [currentState, setCurrentState] = useState<UIState>("question");
   const [isRecording, setIsRecording] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true); // Default terbuka di desktop
+  const [textInputOpen, setTextInputOpen] = useState(false);
+  const [submittedAnswer, setSubmittedAnswer] = useState<string | null>(null);
   
   // State untuk menyimpan pertanyaan mana yang sedang aktif
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -36,11 +42,13 @@ export default function App() {
   }, []);
 
   const handleStartRecording = () => {
+    setSubmittedAnswer(null);
     setIsRecording(true);
     setCurrentState("recording");
   };
 
   const handleStopRecording = () => {
+    setSubmittedAnswer(null);
     setIsRecording(false);
     setCurrentState("processing");
 
@@ -53,15 +61,29 @@ export default function App() {
   const handleNextQuestion = () => {
     // Lanjut ke pertanyaan berikutnya secara berurutan
     setQuestionIndex((prev) => (prev + 1) % INTERVIEW_QUESTIONS.length);
+    setSubmittedAnswer(null);
     setCurrentState("question");
   };
 
   const handleClarify = () => {
+    setSubmittedAnswer(null);
     setCurrentState("question");
   };
 
   const handleTextInput = () => {
-    alert("Text input feature - fallback for when mic is unavailable");
+    if (currentState === "processing" || isRecording) return;
+    setTextInputOpen(true);
+  };
+
+  const handleTextAnswerSubmit = (answer: string) => {
+    setSubmittedAnswer(answer);
+    setTextInputOpen(false);
+    setIsRecording(false);
+    setCurrentState("processing");
+
+    setTimeout(() => {
+      setCurrentState("feedback");
+    }, 1200);
   };
 
   const handleAudioRecorded = async (audioBlob: Blob) => {
@@ -95,6 +117,7 @@ export default function App() {
     
     // 2. Terapkan state
     setQuestionIndex(nextIndex);
+    setSubmittedAnswer(null);
     setCurrentState("question");
     setIsRecording(false);
     
@@ -131,15 +154,15 @@ export default function App() {
               />
             </AnimatePresence>
 
-            {/* State 3 & 4: Transcribing / Final Answer */}
+            {/* State 3 & 4: Submitted answer */}
             {(currentState === "processing" || currentState === "feedback") && (
               <ChatMessage
                 role="user"
-                isTranscribing={currentState === "processing"}
+                isTranscribing={currentState === "processing" && !submittedAnswer}
                 content={
                   currentState === "processing"
-                    ? "Transcribing audio..."
-                    : "Well, for this specific situation, I focused on clearly communicating with my team, breaking down the problem into smaller tasks, and ensuring everyone was aligned. I organized a quick sync-up meeting to gather input, and we managed to resolve the issue smoothly."
+                    ? submittedAnswer ?? "Transcribing audio..."
+                    : submittedAnswer ?? DEMO_AUDIO_ANSWER
                 }
               />
             )}
@@ -200,6 +223,15 @@ export default function App() {
           />
         </div>
       </div>
+
+      <AnimatePresence>
+        {textInputOpen && (
+          <TextInputModal
+            onClose={() => setTextInputOpen(false)}
+            onSubmit={handleTextAnswerSubmit}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

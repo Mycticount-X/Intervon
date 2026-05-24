@@ -246,7 +246,7 @@ export function VoiceInputPanel({
           </div>
 
           <p className="text-slate-500 text-sm font-medium">
-            Preparing feedback from your recording
+            Preparing feedback for your answer
           </p>
         </div>
       </motion.div>
