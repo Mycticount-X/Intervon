@@ -1,11 +1,13 @@
-import { motion } from "motion/react";
-import { Mic, Square, Keyboard, Download } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Mic, Square, Keyboard, Download, LoaderCircle } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AudioVisualizer } from "./AudioVisualizer";
+
+type VoiceInputState = "question" | "recording" | "processing" | "feedback";
 
 interface VoiceInputPanelProps {
   isRecording: boolean;
-  currentState: string;
+  currentState: VoiceInputState;
   onStartRecording: () => void;
   onStopRecording: () => void;
   onTextInput: () => void;
@@ -26,45 +28,20 @@ export function VoiceInputPanel({
   const animationFrameRef = useRef<number | null>(null);
   const [waveformData, setWaveformData] = useState<Uint8Array | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const recordedAudioUrlRef = useRef<string | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Initialize audio capture when recording starts
-  useEffect(() => {
-    if (!isRecording) {
-      return; // Don't do anything if not recording
-    }
+  const clearRecordedAudioUrl = useCallback(() => {
+    const currentUrl = recordedAudioUrlRef.current;
 
-    if (mediaRecorderRef.current) {
-      return; // Already recording
-    }
-
-    // Clear the previous recording URL and data when starting a new one
-    if (recordedAudioUrl) {
-      URL.revokeObjectURL(recordedAudioUrl);
+    if (currentUrl) {
+      URL.revokeObjectURL(currentUrl);
+      recordedAudioUrlRef.current = null;
       setRecordedAudioUrl(null);
     }
-    setWaveformData(null);
-    
-    initializeAudioCapture();
-  }, [isRecording]);
+  }, []);
 
-  // Cleanup: revoke object URL when component unmounts
-  useEffect(() => {
-    return () => {
-      if (recordedAudioUrl) {
-        URL.revokeObjectURL(recordedAudioUrl);
-      }
-      // Full cleanup on unmount
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, [recordedAudioUrl]);
-
-  const initializeAudioCapture = async () => {
+  const initializeAudioCapture = useCallback(async () => {
     try {
       // Aggressive cleanup of any existing resources
       if (animationFrameRef.current) {
@@ -78,6 +55,7 @@ export function VoiceInputPanel({
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current = null;
       }
+      clearRecordedAudioUrl();
       setWaveformData(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -102,11 +80,8 @@ export function VoiceInputPanel({
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(audioBlob);
         
-        // Clean up old URL if it exists
-        if (recordedAudioUrl) {
-          URL.revokeObjectURL(recordedAudioUrl);
-        }
-        
+        clearRecordedAudioUrl();
+        recordedAudioUrlRef.current = url;
         setRecordedAudioUrl(url);
         
         // Callback to parent component
@@ -174,7 +149,38 @@ export function VoiceInputPanel({
       alert("Unable to access microphone. Please check permissions.");
       onStopRecording();
     }
-  };
+  }, [clearRecordedAudioUrl, onAudioRecorded, onStopRecording]);
+
+  // Initialize audio capture when recording starts
+  useEffect(() => {
+    if (!isRecording) {
+      return; // Don't do anything if not recording
+    }
+
+    if (mediaRecorderRef.current) {
+      return; // Already recording
+    }
+
+    void initializeAudioCapture();
+  }, [isRecording, initializeAudioCapture]);
+
+  // Cleanup: revoke object URL when component unmounts
+  useEffect(() => {
+    return () => {
+      const currentUrl = recordedAudioUrlRef.current;
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+        recordedAudioUrlRef.current = null;
+      }
+      // Full cleanup on unmount
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
 
   const handleStopClick = () => {
     if (mediaRecorderRef.current && isRecording) {
@@ -192,42 +198,103 @@ export function VoiceInputPanel({
     }
   };
 
-  if (currentState === "processing") {
+  const isProcessing = currentState === "processing";
+
+  if (isProcessing) {
     return (
-      <div className="w-full max-w-2xl mx-auto flex items-center justify-center py-4">
-        <span className="text-slate-400 text-sm font-medium animate-pulse">Analyzing your response...</span>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-2xl mx-auto"
+        aria-live="polite"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              disabled
+              aria-busy="true"
+              className="relative flex min-h-14 min-w-0 flex-1 cursor-wait items-center justify-center gap-3 overflow-hidden rounded-full bg-blue-600/90 px-4 py-3.5 text-sm font-medium text-white shadow-lg shadow-blue-200 disabled:opacity-95 sm:py-4 sm:text-lg"
+            >
+              <motion.span
+                className="absolute inset-y-0 left-0 w-1/3 bg-white/20 blur-sm"
+                animate={{ x: ["-120%", "360%"] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <span className="relative flex min-w-0 items-center justify-center gap-2 sm:gap-3">
+                <LoaderCircle className="size-5 shrink-0 animate-spin sm:size-6" />
+                <span className="text-center leading-tight">Analyzing your answer...</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled
+              className="flex-shrink-0 cursor-not-allowed rounded-full border border-slate-200 bg-white p-3.5 text-slate-400 opacity-70 shadow-sm sm:p-4"
+              title="Text input disabled while analyzing"
+            >
+              <Keyboard className="size-6" />
+            </button>
+          </div>
+
+          <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <motion.div
+              className="h-full w-1/3 rounded-full bg-blue-500"
+              animate={{ x: ["-120%", "320%"] }}
+              transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+
+          <p className="text-slate-500 text-sm font-medium">
+            Preparing feedback for your answer
+          </p>
+        </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {!isRecording ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-4 w-full">
-            <button
+      <AnimatePresence mode="wait">
+        {!isRecording ? (
+        <motion.div
+          key="voice-ready"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="flex w-full items-center gap-3 sm:gap-4">
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onStartRecording}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-full font-medium text-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-blue-200 hover:shadow-xl hover:-translate-y-0.5"
+              className="flex min-h-14 min-w-0 flex-1 items-center justify-center gap-3 rounded-full bg-blue-600 px-4 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:py-4 sm:text-lg"
             >
               <Mic className="size-6" />
               <span>Tap to Speak</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onTextInput}
-              className="p-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-full transition-colors flex-shrink-0 shadow-sm"
+              className="flex-shrink-0 rounded-full border border-slate-200 bg-white p-3.5 text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:p-4"
               title="Type instead (Fallback)"
             >
               <Keyboard className="size-6" />
-            </button>
+            </motion.button>
           </div>
 
           {recordedAudioUrl && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={downloadAudio}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
             >
               <Download className="size-4" />
               Download last recording
@@ -235,20 +302,51 @@ export function VoiceInputPanel({
           )}
         </motion.div>
       ) : (
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4">
+        <motion.div
+          key="voice-recording"
+          initial={{ scale: 0.96, opacity: 0, y: 8 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-col items-center gap-4"
+        >
+          <motion.div
+            animate={{ boxShadow: ["0 0 0 0 rgba(239,68,68,0.12)", "0 0 0 8px rgba(239,68,68,0)"] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-sm font-medium text-red-600"
+          >
+            <motion.span
+              className="size-2 rounded-full bg-red-500"
+              animate={{ scale: [1, 1.35, 1], opacity: [0.75, 1, 0.75] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            Recording in progress
+          </motion.div>
+
           {/* Real Waveform Visualizer */}
           <AudioVisualizer waveformData={waveformData} />
 
-          <button
-            onClick={handleStopClick}
-            className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-200 transition-transform hover:scale-105 active:scale-95"
-          >
-            <Square fill="white" className="size-5 text-white" />
-          </button>
+          <div className="relative flex items-center justify-center">
+            <motion.span
+              className="absolute size-16 rounded-full bg-red-400/25"
+              animate={{ scale: [1, 1.45], opacity: [0.45, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
+            />
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handleStopClick}
+              className="relative w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-200 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100"
+              aria-label="Stop recording"
+            >
+              <Square fill="white" className="size-5 text-white" />
+            </motion.button>
+          </div>
 
           <p className="text-slate-500 text-sm font-medium mt-1 animate-pulse">Recording... Tap to stop</p>
         </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

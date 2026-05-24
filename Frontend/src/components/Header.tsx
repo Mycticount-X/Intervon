@@ -32,14 +32,15 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const currentShortRole = roleOptions.find(r => r.full === selectedRole)?.short;
 
   return (
-    <header className="h-[72px] border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center shrink-0">
-      <div className="w-full px-6 flex items-center justify-between">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center border-b border-slate-200 bg-white/80 backdrop-blur-md sm:h-[72px]">
+      <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 sm:px-6">
         
         {/* Bagian Kiri */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-500"
+            className="flex shrink-0 items-center justify-center rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
           >
             <Menu className="size-5" />
           </button>
@@ -49,7 +50,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         </div>
 
         {/* Bagian Kanan */}
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           
           {/* Role */}
           <div className="relative">
@@ -58,7 +59,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 setIsRoleDropdownOpen(!isRoleDropdownOpen);
                 setIsLevelDropdownOpen(false); 
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 transition-colors hover:border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:gap-2 sm:px-4"
             >
               <span className="text-slate-700 text-sm font-medium hidden sm:inline">{selectedRole}</span>
               <span className="text-slate-700 text-sm font-medium sm:hidden">{currentShortRole}</span>
@@ -76,7 +77,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         setSelectedRole(role.full);
                         setIsRoleDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 ${
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-100 ${
                         selectedRole === role.full ? 'text-blue-600 font-semibold bg-blue-50/50' : 'text-slate-700'
                       }`}
                     >
@@ -95,7 +96,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 setIsLevelDropdownOpen(!isLevelDropdownOpen);
                 setIsRoleDropdownOpen(false);
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 transition-colors hover:border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:gap-2 sm:px-4"
             >
               <span className="text-slate-700 text-sm font-medium">{selectedLevel}</span>
               <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isLevelDropdownOpen ? 'rotate-180' : ''}`} />
@@ -112,7 +113,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         setSelectedLevel(level);
                         setIsLevelDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 ${
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-100 ${
                         selectedLevel === level ? 'text-blue-600 font-semibold bg-blue-50/50' : 'text-slate-700'
                       }`}
                     >
