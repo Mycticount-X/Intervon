@@ -13,8 +13,11 @@ export function ChatMessage({ role, content, isLoading, isTranscribing }: ChatMe
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       className={`flex gap-4 items-start ${isAI ? "flex-row" : "flex-row-reverse"}`}
     >
       {/* Avatar */}
@@ -35,10 +38,17 @@ export function ChatMessage({ role, content, isLoading, isTranscribing }: ChatMe
         } ${isTranscribing ? "bg-blue-500 opacity-90" : ""}`}
       >
         {isLoading ? (
-          <div className="flex gap-1.5 py-1 items-center h-[24px]">
-            <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
-            <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-            <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+          <div className="flex flex-wrap gap-x-3 gap-y-2 py-1 items-center min-h-[24px]">
+            <div className="flex gap-1.5 items-center">
+              <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+              <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+              <motion.div className="size-2 rounded-full bg-slate-400" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+            </div>
+            {content && (
+              <span className="text-sm font-medium text-slate-500">
+                {content}
+              </span>
+            )}
           </div>
         ) : isTranscribing ? (
           <span className="animate-pulse font-medium">{content}</span>

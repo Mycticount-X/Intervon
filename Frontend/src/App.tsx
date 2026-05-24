@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, Menu, MessageCircle, ArrowRight } from "lucide-react";
+import { MessageCircle, ArrowRight } from "lucide-react";
 import { ChatMessage } from "./components/ChatMessage";
 import { VoiceInputPanel } from "./components/VoiceInputPanel";
 import { FeedbackCard } from "./components/FeedbackCard";
 import { Sidebar } from "./components/Sidebar";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Header } from "./components/Header";
 
 type UIState = "question" | "recording" | "processing" | "feedback";
@@ -123,10 +123,13 @@ export default function App() {
           <div className="max-w-4xl mx-auto flex flex-col gap-6">
             
             {/* State 1: Model asks question (Dinamis dari Bank Soal) */}
-            <ChatMessage
-              role="ai"
-              content={INTERVIEW_QUESTIONS[questionIndex]}
-            />
+            <AnimatePresence mode="wait" initial={false}>
+              <ChatMessage
+                key={`question-${questionIndex}`}
+                role="ai"
+                content={INTERVIEW_QUESTIONS[questionIndex]}
+              />
+            </AnimatePresence>
 
             {/* State 3 & 4: Transcribing / Final Answer */}
             {(currentState === "processing" || currentState === "feedback") && (
@@ -143,7 +146,7 @@ export default function App() {
 
             {/* State 3: AI Processing Loader */}
             {currentState === "processing" && (
-              <ChatMessage role="ai" content="" isLoading />
+              <ChatMessage role="ai" content="Analyzing your answer..." isLoading />
             )}
 
             {/* State 4: AI Feedback */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Mic, Square, Keyboard, ChevronDown, CheckCircle, Bot, User, ArrowRight, MessageCircle } from 'lucide-react';
 
 type AppState = 'idle' | 'recording' | 'processing' | 'feedback';
