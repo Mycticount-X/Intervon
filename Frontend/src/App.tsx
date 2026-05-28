@@ -29,8 +29,7 @@ export default function App() {
   );
   const [textInputOpen, setTextInputOpen] = useState(false);
   const [submittedAnswer, setSubmittedAnswer] = useState<string | null>(null);
-  
-  // State untuk menyimpan pertanyaan mana yang sedang aktif
+  const [feedbackData, setFeedbackData] = useState<{ score: "excellent" | "good" | "needs-improvement"; text: string } | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
 
   // Pastikan sidebar tertutup otomatis jika dibuka dari HP
@@ -45,30 +44,32 @@ export default function App() {
 
   const handleStartRecording = () => {
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setIsRecording(true);
     setCurrentState("recording");
   };
 
   const handleStopRecording = () => {
-    setSubmittedAnswer(null);
+    // setSubmittedAnswer(null);
     setIsRecording(false);
     setCurrentState("processing");
 
     // Simulasi proses RAG & LLM (Whisper -> Llama 3)
-    setTimeout(() => {
-      setCurrentState("feedback");
-    }, 2500);
+    // setTimeout(() => {
+    //   setCurrentState("feedback");
+    // }, 2500);
   };
 
   const handleNextQuestion = () => {
-    // Lanjut ke pertanyaan berikutnya secara berurutan
     setQuestionIndex((prev) => (prev + 1) % INTERVIEW_QUESTIONS.length);
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setCurrentState("question");
   };
 
   const handleClarify = () => {
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setCurrentState("question");
   };
 
@@ -88,25 +89,41 @@ export default function App() {
     }, 1200);
   };
 
+  // Main Logic
   const handleAudioRecorded = async (audioBlob: Blob) => {
     try {
-      // Upload to backend
       const formData = new FormData();
       formData.append("file", audioBlob, "audio.webm");
 
-      const response = await fetch("http://localhost:8000/api/audio/upload", {
+      const response = await fetch("http://localhost:8000/test-upload-audio", {
         method: "POST",
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Audio uploaded:", data);
-      } else {
-        console.error("Upload failed:", response.statusText);
-      }
+      if (!response.ok) throw new Error("Gagal terhubung ke server");
+
+      const data = await response.json();
+      
+      // Success Backend
+      setSubmittedAnswer(data.transcription || "Tidak ada suara yang terdeteksi.");
+      setFeedbackData({
+        score: data.score || "excellent",
+        text: data.feedback || "Transkripsi berhasil dikirim! (Menunggu modul AI Feedback diaktifkan di Backend)"
+      });
+      setCurrentState("feedback");
+
     } catch (error) {
-      console.error("Error uploading audio:", error);
+      console.error("Backend error, menjalankan fallback statis:", error);
+      
+      // Fallback
+      setTimeout(() => {
+        setSubmittedAnswer(DEMO_AUDIO_ANSWER);
+        setFeedbackData({
+          score: "good",
+          text: "Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
+        });
+        setCurrentState("feedback");
+      }, 1500); 
     }
   };
 
@@ -181,15 +198,15 @@ export default function App() {
 
             {/* State 4: AI Feedback */}
             <AnimatePresence mode="popLayout">
-              {currentState === "feedback" && (
+              {currentState === "feedback" && feedbackData && (
                 <ChatMessage
                   key="feedback-result"
                   role="ai"
                   content={
                     <div className="flex flex-col">
                       <FeedbackCard
-                        score="good"
-                        feedback="Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
+                        score={feedbackData.score}
+                        feedback={feedbackData.text}
                       />
                       
                       {/* State 5: Inline Next Actions */}
