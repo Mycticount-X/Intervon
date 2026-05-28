@@ -44,6 +44,7 @@ export default function App() {
 
   const handleStartRecording = () => {
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setIsRecording(true);
     setCurrentState("recording");
   };
@@ -60,14 +61,15 @@ export default function App() {
   };
 
   const handleNextQuestion = () => {
-    // Lanjut ke pertanyaan berikutnya secara berurutan
     setQuestionIndex((prev) => (prev + 1) % INTERVIEW_QUESTIONS.length);
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setCurrentState("question");
   };
 
   const handleClarify = () => {
     setSubmittedAnswer(null);
+    setFeedbackData(null);
     setCurrentState("question");
   };
 
@@ -102,24 +104,26 @@ export default function App() {
 
       const data = await response.json();
       
+      // Success Backend
       setSubmittedAnswer(data.transcription || "Tidak ada suara yang terdeteksi.");
       setFeedbackData({
-        score: data.score || "excellent", // Asumsi backend mengirim score
-        text: data.feedback || "Transkripsi berhasil! (Menunggu AI Feedback aktif di Backend)"
+        score: data.score || "excellent",
+        text: data.feedback || "Transkripsi berhasil dikirim! (Menunggu modul AI Feedback diaktifkan di Backend)"
       });
       setCurrentState("feedback");
 
     } catch (error) {
       console.error("Backend error, menjalankan fallback statis:", error);
       
+      // Fallback
       setTimeout(() => {
         setSubmittedAnswer(DEMO_AUDIO_ANSWER);
         setFeedbackData({
           score: "good",
-          text: "Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**."
+          text: "Good effort! You highlighted communication and teamwork. However, to make this an **Excellent** response, use the **STAR method**. Specify the exact **Situation**, your specific **Task**, the concrete **Action** you took, and the measurable **Result**."
         });
         setCurrentState("feedback");
-      }, 1500);
+      }, 1500); 
     }
   };
 
