@@ -35,8 +35,7 @@ def search(user_answer:str, question_id: str, role:str) -> dict:
                 "text": user_answer
             },
             filter={
-                "question_id": {"$eq": question_id}, 
-                "role": {"$eq":role },
+                "question_id": {"$eq": question_id} # <-- Kita hapus filter role agar pencarian fokus ke ID saja
             },
         )
         if search_result.result.hits:

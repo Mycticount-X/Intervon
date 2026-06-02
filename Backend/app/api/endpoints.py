@@ -20,7 +20,16 @@ async def evaluate_interview(
     """Endpoint utama untuk evaluation user answer"""
 
     file_bytes = await file.read()
-    user_answer =transcribe_audio(file.filename, file_bytes)
+    user_answer = transcribe_audio(file.filename, file_bytes)
+    
+    # --- RADAR PELACAK DITAMBAHKAN DI SINI ---
+    print("--- HASIL REKAMAN ---")
+    print("Suara User:", user_answer)
+    print("Mencari ID Soal:", question_id)
+    print("Role:", role)
+    print("---------------------")
+    # ----------------------------------------
+
     if "Error" in user_answer:
         raise HTTPException(status_code=500, detail="Failed to transcribe audio")
     
@@ -28,6 +37,7 @@ async def evaluate_interview(
 
     if "error" in pinecone_res:
         raise HTTPException(status_code=500, detail=pinecone_res["error"])
+    
     ideal_answer = pinecone_res.get("ideal_answer", "")
     embedding_score = pinecone_res.get("embeding_score", "0.0")
 
@@ -72,7 +82,7 @@ async def evaluate_interview(
 
 @router.get("/questions", response_model=QuestionListResponse)
 def get_question(role: Optional[str] = Query(None,description="Filter soal based on Role")): 
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) #krna naik 3x ya -api-app-backend
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) 
     json_path = os.path.join(base_dir, "dataset.json")
     try: 
         with open(json_path, "r", encoding="utf-8") as f: 
@@ -104,4 +114,3 @@ def get_question(role: Optional[str] = Query(None,description="Filter soal based
         status_code=500,
         detail=f"Gagal membaca dataset: {str(e)}"
     )
-
