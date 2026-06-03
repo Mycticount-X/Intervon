@@ -9,7 +9,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Mengizinkan semua frontend (termasuk localhost:5173 / 5174)
     allow_credentials=True,
-    allow_methods=["*"],  # Mengizinkan POST, GET, dll
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 

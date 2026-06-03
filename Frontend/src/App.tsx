@@ -39,7 +39,7 @@ export default function App() {
     const fetchQuestions = async () => {
       try {
         // Menarik data soal langsung dari Backend
-        const response = await fetch("http://localhost:8000/api/questions");
+        const response = await fetch("http://127.0.0.1:8000/api/questions");
         const result = await response.json();
         
         // Simpan data soal dari backend ke state 'questions'
@@ -113,7 +113,7 @@ export default function App() {
       formData.append("question_id", currentQuestion.id);
       formData.append("role", currentQuestion.role);
 
-      const response = await fetch("http://localhost:8000/api/evaluate", {
+      const response = await fetch("http://127.0.0.1:8000/api/evaluate", {
         method: "POST",
         body: formData,
       });
